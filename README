@@ -1,0 +1,48 @@
+File-ExtAttr version 0.03
+=========================
+
+File::ExtAttr is a Perl module providing access to the extended attributes
+of files.
+
+Extended attributes are metadata associated with a file.
+Examples are access control lists (ACLs) and other security parameters.
+But users can add their own key=value pairs.
+
+Extended attributes may not be supported by your operating system.
+This module is aimed at Linux, Unix or Unix-like operating systems
+(e.g.: Mac OS X, FreeBSD, NetBSD, OpenBSD).
+
+Extended attributes may also not be supported by your filesystem
+or require special options to be enabled for a particular filesystem
+(e.g. "mount -o user_xattr /dev/hda1 /some/path").
+
+Please see the POD documentation for more detailed information
+("perldoc File::ExtAttr").
+
+INSTALLATION
+
+To install this module type the following:
+
+   perl Makefile.PL
+   make
+   make test
+   make install
+
+Installation requires a C compiler.
+
+DEPENDENCIES
+
+This module requires these other modules and libraries:
+
+  Carp
+  Scalar::Util
+
+COPYRIGHT AND LICENCE
+
+Copyright (C) 2005 by Kevin M. Goess
+
+Copyright (C) 2005, 2006 by Richard Dawe
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself, either Perl version 5.8.5 or,
+at your option, any later version of Perl 5 you may have available.
