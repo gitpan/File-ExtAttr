@@ -52,7 +52,6 @@ multiple operating systems.
 
 =cut
 
-use 5.008005;
 use strict;
 use warnings;
 use Carp;
@@ -78,7 +77,7 @@ our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 our @EXPORT = qw(
 );
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 #this is used by getxattr(), needs documentation
 $File::ExtAttr::MAX_INITIAL_VALUELEN = 255;
