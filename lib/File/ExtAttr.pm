@@ -69,7 +69,7 @@ our @ISA = qw(Exporter);
 # This allows declaration	use File::ExtAttr ':all';
 # If you do not need this, moving things directly into @EXPORT or @EXPORT_OK
 # will save memory.
-our %EXPORT_TAGS = ( 'all' => [ qw( getfattr setfattr delfattr
+our %EXPORT_TAGS = ( 'all' => [ qw( getfattr setfattr delfattr listfattr
 ) ] );
 
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
@@ -77,7 +77,7 @@ our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 our @EXPORT = qw(
 );
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 #this is used by getxattr(), needs documentation
 $File::ExtAttr::MAX_INITIAL_VALUELEN = 255;
@@ -135,11 +135,13 @@ sub _is_fh
     return $is_fh;
 }
 
-=item getfattr([$filename | $filehandle], $attrname)
+=item getfattr([$filename | $filehandle], $attrname, [$flags])
 
 Return the value of the attribute named C<$attrname>
 for the file named C<$filename> or referenced by the open filehandle
 C<$filehandle> (which should be an IO::Handle).
+
+C<$flags> are currently unused.
 
 If no attribute is found, returns C<undef>. Otherwise gives a warning.
 
@@ -170,7 +172,10 @@ will cause setfattr to fail if the attribute does not already exist.
 If C<$flags> is omitted, then the attribute will be created if necessary
 or silently replaced.
 
-If the attribute could not be set, a warning is given.
+NOTE: C<XATTR_*> are currently Linux-specific. A more portable set of flags
+is on the to-do list.
+
+If the attribute could not be set, a warning is issued.
 
 =cut
 
@@ -185,13 +190,15 @@ sub setfattr
         : _setfattr($file, @_);
 }
 
-=item delfattr([$filename | $filehandle], $attrname)
+=item delfattr([$filename | $filehandle], $attrname, [$flags])
 
 Delete the attribute named C<$attrname> for the file named C<$filename>
 or referenced by the open filehandle C<$filehandle>
 (which should be an IO::Handle).
 
-Returns true on success, otherwise false and a warning is given.
+C<$flags> are currently unused.
+
+Returns true on success, otherwise false and a warning is issued.
 
 =cut
 
@@ -204,6 +211,29 @@ sub delfattr
         ? _fdelfattr($file->fileno(), @_)
         # Filename
         : _delfattr($file, @_);
+}
+
+=item listfattr([$filename | $filehandle], [$flags])
+
+Return the attributes on the file named C<$filename> or referenced by the open
+filehandle C<$filehandle> (which should be an IO::Handle).
+
+C<$flags> are currently unused.
+
+Returns undef on failure and $! will be set.
+
+=cut
+
+sub listfattr
+{
+    my $file = shift;
+
+    return _is_fh($file)
+        # File handle
+        ? _listfattr(undef, $file->fileno(), @_)
+        # Filename
+        : _listfattr($file, -1, @_);
+
 }
 
 =back
@@ -245,17 +275,26 @@ L<http://www.die.net/doc/linux/man/man5/attr.5.html>
 
 =item OpenBSD
 
+OpenBSD > 3.8 supports extended attributes.
+
 L<http://www.openbsd.org/cgi-bin/man.cgi?query=extattr_get_file&apropos=0&sektion=0&manpath=OpenBSD+Current&arch=i386&format=html>
 
 =item FreeBSD
+
+FreeBSD >= 5.0 supports extended attributes.
 
 L<http://www.freebsd.org/cgi/man.cgi?query=extattr&sektion=2&apropos=0&manpath=FreeBSD+6.0-RELEASE+and+Ports>
 
 =item NetBSD
 
+NetBSD >= 3.0 supports extended attributes, but you'll need to use
+NetBSD >= 4.0 to have a filesystem that supports them.
+
 L<http://netbsd.gw.com/cgi-bin/man-cgi?extattr_get_file+2+NetBSD-current>
 
 =item Mac OS X
+
+L<http://developer.apple.com/documentation/Darwin/Reference/ManPages/man2/getxattr.2.html>
 
 L<http://arstechnica.com/reviews/os/macosx-10.4.ars/7>
 

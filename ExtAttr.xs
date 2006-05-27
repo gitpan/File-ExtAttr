@@ -67,31 +67,23 @@ _fsetfattr (fd, attrname, attrvalueSV, flags = 0)
 
 
 SV *
-_getfattr(path, attrname)
+_getfattr(path, attrname, flags = 0)
         const char *path
         const char *attrname
+        int flags
    CODE:
         char * attrvalue;
         int attrlen;
-        STRLEN buflen = SvIV(get_sv(MAX_INITIAL_VALUELEN_VARNAME, FALSE));
+        ssize_t buflen;
+
+        buflen = portable_lenxattr(path, attrname);
+        if (buflen <= 0)
+	  buflen = SvIV(get_sv(MAX_INITIAL_VALUELEN_VARNAME, FALSE));
 
         attrvalue = NULL;
-
-        //try first at our default value $File::ExtAttr::MAX_INITIAL_VALUELEN
         New(1, attrvalue, buflen, char);
+
         attrlen = portable_getxattr(path, attrname, attrvalue, buflen);
-        if (attrlen == -1){
-            if (errno == ERANGE) {
-                //ok, look up the real length
-                attrlen = portable_getxattr(path, attrname, attrvalue, 0);
-                Safefree(attrvalue);
-                New(1, attrvalue, attrlen, char);
-                attrlen = portable_getxattr(path, attrname, attrvalue, attrlen);
-            }
-        }
-
-
-        //uh-oh, getxattr failed
         if (attrlen == -1){
 
             //key not found, just return undef
@@ -114,31 +106,23 @@ _getfattr(path, attrname)
 
 
 SV *
-_fgetfattr(fd, attrname)
+_fgetfattr(fd, attrname, flags = 0)
         int fd
         const char *attrname
+        int flags
    CODE:
         char * attrvalue;
         int attrlen;
-        STRLEN buflen = SvIV(get_sv(MAX_INITIAL_VALUELEN_VARNAME, FALSE));
+        ssize_t buflen;
+
+        buflen = portable_flenxattr(fd, attrname);
+        if (buflen <= 0)
+	  buflen = SvIV(get_sv(MAX_INITIAL_VALUELEN_VARNAME, FALSE));
 
         attrvalue = NULL;
-
-        //try first at our default value $File::ExtAttr::MAX_INITIAL_VALUELEN
         New(1, attrvalue, buflen, char);
+
         attrlen = portable_fgetxattr(fd, attrname, attrvalue, buflen);
-        if (attrlen == -1){
-            if (errno == ERANGE) {
-                //ok, look up the real length
-                attrlen = portable_fgetxattr(fd, attrname, attrvalue, 0);
-                Safefree(attrvalue);
-                New(1, attrvalue, attrlen, char);
-                attrlen = portable_fgetxattr(fd, attrname, attrvalue, attrlen);
-            }
-        }
-
-
-        //uh-oh, getxattr failed
         if (attrlen == -1){
 
             //key not found, just return undef
@@ -161,9 +145,10 @@ _fgetfattr(fd, attrname)
 
 
 int 
-_delfattr (path, attrname)
-         const char *path
-         const char *attrname
+_delfattr (path, attrname, flags = 0)
+        const char *path
+        const char *attrname
+        int flags
     CODE:
         RETVAL = (portable_removexattr(path, attrname) == 0);
     
@@ -172,11 +157,73 @@ _delfattr (path, attrname)
 
 
 int 
-_fdelfattr (fd, attrname)
-         int fd
-         const char *attrname
+_fdelfattr (fd, attrname, flags = 0)
+        int fd
+        const char *attrname
+        int flags
     CODE:
         RETVAL = (portable_fremovexattr(fd, attrname) == 0);
     
     OUTPUT: 
         RETVAL
+
+void
+_listfattr (path, fd, flags = 0)
+        const char *path
+        int fd
+        int flags
+    INIT:
+        ssize_t size, ret;
+        char *namebuf = NULL;
+        char *nameptr;
+    PPCODE:
+        if(fd == -1)
+            size = portable_listxattr(path, NULL, 0);
+        else
+            size = portable_flistxattr(fd, NULL, 0);
+
+        if (size == -1)
+        {
+            XSRETURN_UNDEF;
+        } else if (size == 0)
+        {
+            XSRETURN_EMPTY;
+        }
+
+        namebuf = malloc(size);
+
+        if (fd == -1)
+            ret = portable_listxattr(path, namebuf, size);
+        else
+            ret = portable_flistxattr(fd, namebuf, size);
+
+        // There could be a race condition here, if someone adds a new
+        // attribute between the two listxattr calls. However it just means we
+        // might return ERANGE.
+
+        if (ret == -1)
+        {
+            free(namebuf);
+            XSRETURN_UNDEF;
+        } else if (ret == 0)
+        {
+            free(namebuf);
+            XSRETURN_EMPTY;
+        }
+
+        nameptr = namebuf;
+
+        while(nameptr < namebuf + ret)
+        {
+          char *endptr = nameptr;
+          while(*endptr++ != '\0');
+
+          // endptr will now point one past the end..
+
+          XPUSHs(sv_2mortal(newSVpvn(nameptr, endptr - nameptr - 1)));
+
+          // nameptr could now point past the end of namebuf
+          nameptr = endptr;
+        }
+
+        free(namebuf);
