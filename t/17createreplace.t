@@ -8,7 +8,7 @@
 # change 'tests => 2' to 'tests => last_test_to_print';
 
 use strict;
-use Test::More tests => 8;
+use Test::More tests => 4;
 use File::Temp qw(tempfile);
 use File::ExtAttr qw(setfattr getfattr delfattr);
 use IO::File;
@@ -29,25 +29,13 @@ my $val = "ZZZadlf03948alsdjfaslfjaoweir12l34kealfkjalskdfas90d8fajdlfkj./.,f";
 
 print "# using $filename\n";
 
-#for (1..30000) { #checking memory leaks
+#create and replace it -- should fail
+undef $@;
+eval { setfattr($filename, "$key", $val, { create => 1, replace => 1 }); };
+isnt ($@, undef);
 
-   #will die if xattr stuff doesn't work at all
-   setfattr($filename, "$key", $val) || die "setfattr failed on filename $filename: $!"; 
-
-   #set it
-   is (setfattr($filename, "$key", $val), 1);
-
-   #read it back
-   is (getfattr($filename, "$key"), $val);
-
-   #delete it
-   ok (delfattr($filename, "$key"));
-
-   #check that it's gone
-   is (getfattr($filename, "$key"), undef);
-#}
-#print STDERR "done\n";
-#<STDIN>;
+#check that it's not been created
+is (getfattr($filename, "$key"), undef);
 
 ##########################
 # IO::Handle-based tests #
@@ -57,25 +45,14 @@ $fh = new IO::File("<$filename") || die "Unable to open $filename";
 
 print "# using file descriptor ".$fh->fileno()."\n";
 
-#for (1..30000) { #checking memory leaks
+my $key2 = $key.'2';
 
-   #will die if xattr stuff doesn't work at all
-   setfattr($fh, "$key", $val)
-    || die "setfattr failed on file descriptor ".$fh->fileno().": $!"; 
+#create and replace it -- should fail
+undef $@;
+eval { setfattr($fh, $key2, $val, { create => 1, replace => 1 }); };
+isnt ($@, undef);
 
-   #set it
-   is (setfattr($fh, "$key", $val), 1);
-
-   #read it back
-   is (getfattr($fh, "$key"), $val);
-
-   #delete it
-   ok (delfattr($fh, "$key"));
-
-   #check that it's gone
-   is (getfattr($fh, "$key"), undef);
-#}
-#print STDERR "done\n";
-#<STDIN>;
+#check that it's not been created
+is (getfattr($fh, $key2), undef);
 
 END {unlink $filename if $filename};

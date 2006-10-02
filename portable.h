@@ -1,58 +1,27 @@
 #ifndef EXTATTR_PORTABLE_H
 #define EXTATTR_PORTABLE_H
 
-#include <sys/types.h>
-#ifdef __APPLE__
-#include <sys/xattr.h>
-#elif defined(BSD) /* FreeBSD, NetBSD, OpenBSD */
-#include <sys/extattr.h>
-#include <sys/uio.h>
-#else /* Linux */
-#include <attr/attributes.h>
-#include <attr/xattr.h>
-#endif
+/* OS detection */
+#include "extattr_os.h"
 
-#ifdef BSD
+struct hv;
 
-/* Helper to convert number of bytes written into success/failure code. */
-static inline int
-bsd_extattr_set_succeeded (const int expected, const int actual)
-{
-  int ret = -1;
-
-  if (actual != -1)
-  {
-    if (actual != expected)
-    {
-      errno = ENOBUFS; /* Pretend there's not enough space for the data. */
-      ret = -1;
-    }
-    else
-    { 
-      ret = 0;
-    }
-  }
-
-  return ret;
-}
-
-#endif /* BSD */
-
+/* Portable extattr functions */
 static inline int
 portable_setxattr (const char *path,
                    const char *attrname,
                    const void *attrvalue,
                    const size_t slen,
-                   const int flags)
+                   struct hv *flags)
 {
-#ifdef __APPLE__
-  return setxattr(path, attrname, attrvalue, slen, 0, flags);
-#elif defined(BSD)
-  /* XXX: Namespace? */
-  int ret = extattr_set_file(path, EXTATTR_NAMESPACE_USER, attrname, attrvalue, slen);
-  return bsd_extattr_set_succeeded(slen, ret);
+#ifdef EXTATTR_MACOSX
+  return macosx_setxattr(path, attrname, attrvalue, slen, flags);
+#elif defined(EXTATTR_BSD)
+  return bsd_setxattr(path, attrname, attrvalue, slen, flags);
+#elif defined(EXTATTR_SOLARIS)
+  return solaris_setxattr(path, attrname, attrvalue, slen, flags);
 #else
-  return setxattr(path, attrname, attrvalue, slen, flags);
+  return linux_setxattr(path, attrname, attrvalue, slen, flags);
 #endif
 }
 
@@ -61,16 +30,16 @@ portable_fsetxattr (const int fd,
                     const char *attrname,
                     const void *attrvalue,
                     const size_t slen,
-                    const int flags)
+                    struct hv *flags)
 {
-#ifdef __APPLE__
-  return fsetxattr(fd, attrname, attrvalue, slen, 0, flags);
-#elif defined(BSD)
-  /* XXX: Namespace? */
-  int ret = extattr_set_fd(fd, EXTATTR_NAMESPACE_USER, attrname, attrvalue, slen);
-  return bsd_extattr_set_succeeded(slen, ret);
+#ifdef EXTATTR_MACOSX
+  return macosx_fsetxattr(fd, attrname, attrvalue, slen, flags);
+#elif defined(EXTATTR_BSD)
+  return bsd_fsetxattr(fd, attrname, attrvalue, slen, flags);
+#elif defined(EXTATTR_SOLARIS)
+  return solaris_fsetxattr(fd, attrname, attrvalue, slen, flags);
 #else
-  return fsetxattr(fd, attrname, attrvalue, slen, flags);
+  return linux_fsetxattr(fd, attrname, attrvalue, slen, flags);
 #endif
 }
 
@@ -78,15 +47,17 @@ static inline int
 portable_getxattr (const char *path,
                    const char *attrname,
                    void *attrvalue,
-                   const size_t slen)
+                   const size_t slen,
+                   struct hv *flags)
 {
-#ifdef __APPLE__
-  return getxattr(path, attrname, attrvalue, slen, 0, 0);
-#elif defined(BSD)
-  /* XXX: Namespace? */
-  return extattr_get_file(path, EXTATTR_NAMESPACE_USER, attrname, attrvalue, slen);
+#ifdef EXTATTR_MACOSX
+  return macosx_getxattr(path, attrname, attrvalue, slen, flags);
+#elif defined(EXTATTR_BSD)
+  return bsd_getxattr(path, attrname, attrvalue, slen, flags);
+#elif defined(EXTATTR_SOLARIS)
+  return solaris_getxattr(path, attrname, attrvalue, slen, flags);
 #else
-  return getxattr(path, attrname, attrvalue, slen);
+  return linux_getxattr(path, attrname, attrvalue, slen, flags);
 #endif
 }
 
@@ -94,83 +65,137 @@ static inline int
 portable_fgetxattr (const int fd,
                     const char *attrname,
                     void *attrvalue,
-                    const size_t slen)
+                    const size_t slen,
+                    struct hv *flags)
 {
-#ifdef __APPLE__
-  return fgetxattr(fd, attrname, attrvalue, slen, 0, 0);
-#elif defined(BSD)
-  /* XXX: Namespace? */
-  return extattr_get_fd(fd, EXTATTR_NAMESPACE_USER, attrname, attrvalue, slen);
+#ifdef EXTATTR_MACOSX
+  return macosx_fgetxattr(fd, attrname, attrvalue, slen, flags);
+#elif defined(EXTATTR_BSD)
+  return bsd_fgetxattr(fd, attrname, attrvalue, slen, flags);
+#elif defined(EXTATTR_SOLARIS)
+  return solaris_fgetxattr(fd, attrname, attrvalue, slen, flags);
 #else
-  return fgetxattr(fd, attrname, attrvalue, slen);
+  return linux_fgetxattr(fd, attrname, attrvalue, slen, flags);
 #endif
 }
 
 static inline ssize_t
-portable_lenxattr (const char *path, const char *attrname)
+portable_lenxattr (const char *path, const char *attrname, struct hv *flags)
 {
 #ifdef BSD
-  /* XXX: Namespace? */
+  /* XXX: flags? Namespace? */
   return extattr_get_file(path, EXTATTR_NAMESPACE_USER, attrname, NULL, 0);
 #else
-  return portable_getxattr(path, attrname, NULL, 0);
+  /* XXX: Can BSD use this too? Maybe once namespacing sorted. */
+  return portable_getxattr(path, attrname, NULL, 0, flags);
 #endif
 }
 
 static inline int
-portable_flenxattr (int fd, const char *attrname)
+portable_flenxattr (int fd, const char *attrname, struct hv *flags)
 {
 #ifdef BSD
-  /* XXX: Namespace? */
+  /* XXX: flags? Namespace? */
   return extattr_get_fd(fd, EXTATTR_NAMESPACE_USER, attrname, NULL, 0);
 #else
-  return portable_fgetxattr(fd, attrname, NULL, 0);
+  /* XXX: Can BSD use this too? Maybe once namespacing sorted. */
+  return portable_fgetxattr(fd, attrname, NULL, 0, flags);
 #endif
 }
 
 static inline int
-portable_removexattr (const char *path, const char *name)
+portable_removexattr (const char *path, const char *name, struct hv *flags)
 {
-#ifdef __APPLE__
-  return removexattr(path, name, 0);
-#elif defined(BSD)
-  /* XXX: Namespace? */
-  return extattr_delete_file(path, EXTATTR_NAMESPACE_USER, name);
+#ifdef EXTATTR_MACOSX
+  return macosx_removexattr(path, name, flags);
+#elif defined(EXTATTR_BSD)
+  return bsd_removexattr(path, name, flags);
+#elif defined(EXTATTR_SOLARIS)
+  return solaris_removexattr(path, name, flags);
 #else
-  return removexattr(path, name);
+  return linux_removexattr(path, name, flags);
 #endif
 }
 
 static inline int
-portable_fremovexattr (const int fd, const char *name)
+portable_fremovexattr (const int fd, const char *name, struct hv *flags)
 {
-#ifdef __APPLE__
-  return fremovexattr(fd, name, 0);
-#elif defined(BSD)
-  /* XXX: Namespace? */
-  return extattr_delete_fd(fd, EXTATTR_NAMESPACE_USER, name);
+#ifdef EXTATTR_MACOSX
+  return macosx_fremovexattr(fd, name, flags);
+#elif defined(EXTATTR_BSD)
+  return bsd_fremovexattr(fd, name, flags);
+#elif defined(EXTATTR_SOLARIS)
+  return solaris_fremovexattr(fd, name, flags);
 #else
-  return fremovexattr(fd, name);
+  return linux_fremovexattr(fd, name, flags);
 #endif
 }
 
 static inline int
-portable_listxattr(const char *path, char *buf, const size_t slen)
+portable_listxattr(const char *path,
+                   char *buf,
+                   const size_t slen,
+                   struct hv *flags)
 {
-#ifdef __APPLE__
-  return listxattr(path, buf, slen, 0);
+#ifdef EXTATTR_MACOSX
+  return macosx_listxattr(path, buf, slen, flags);
+#elif defined(EXTATTR_BSD)
+  return bsd_listxattr(path, buf, slen, flags);
+#elif defined(EXTATTR_SOLARIS)
+  return solaris_listxattr(path, buf, slen, flags);
 #else
-  return listxattr(path, buf, slen);
+  return linux_listxattr(path, buf, slen, flags);
 #endif
 }
 
 static inline int
-portable_flistxattr(const int fd, char *buf, const size_t slen)
+portable_flistxattr(const int fd,
+                    char *buf,
+                    const size_t slen,
+                    struct hv *flags)
 {
-#ifdef __APPLE__
-  return flistxattr(fd, buf, slen, 0);
+#ifdef EXTATTR_MACOSX
+  return macosx_flistxattr(fd, buf, slen, flags);
+#elif defined(EXTATTR_BSD)
+  return bsd_flistxattr(fd, buf, slen, flags);
+#elif defined(EXTATTR_SOLARIS)
+  return solaris_flistxattr(fd, buf, slen, flags);
 #else
-  return flistxattr(fd, buf, slen);
+  return linux_flistxattr(fd, buf, slen, flags);
+#endif
+}
+
+static inline int
+portable_listxattrns(const char *path,
+		     char *buf,
+		     const size_t slen,
+		     struct hv *flags)
+{
+#ifdef EXTATTR_MACOSX
+  return macosx_listxattrns(path, buf, slen, flags);
+#elif defined(EXTATTR_BSD)
+  return bsd_listxattrns(path, buf, slen, flags);
+#elif defined(EXTATTR_SOLARIS)
+  return solaris_listxattrns(path, buf, slen, flags);
+#else
+  return linux_listxattrns(path, buf, slen, flags);
+#endif
+}
+
+static inline int
+portable_flistxattrns(const int fd,
+		      char *buf,
+		      const size_t slen,
+		      struct hv *flags)
+{
+#ifdef EXTATTR_MACOSX
+  return macosx_flistxattrns(fd, buf, slen, flags);
+#elif defined(EXTATTR_BSD)
+  return bsd_flistxattrns(fd, buf, slen, flags);
+#elif defined(EXTATTR_SOLARIS)
+  return solaris_flistxattrns(fd, buf, slen, flags);
+#else
+  return linux_flistxattrns(fd, buf, slen, flags);
 #endif
 }
 

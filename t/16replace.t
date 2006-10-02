@@ -8,7 +8,7 @@
 # change 'tests => 2' to 'tests => last_test_to_print';
 
 use strict;
-use Test::More tests => 8;
+use Test::More tests => 10;
 use File::Temp qw(tempfile);
 use File::ExtAttr qw(setfattr getfattr delfattr);
 use IO::File;
@@ -29,25 +29,20 @@ my $val = "ZZZadlf03948alsdjfaslfjaoweir12l34kealfkjalskdfas90d8fajdlfkj./.,f";
 
 print "# using $filename\n";
 
-#for (1..30000) { #checking memory leaks
+#create it
+is (setfattr($filename, "$key", $val, { create => 1 }), 1);
 
-   #will die if xattr stuff doesn't work at all
-   setfattr($filename, "$key", $val) || die "setfattr failed on filename $filename: $!"; 
+#replace it
+is (setfattr($filename, "$key", $val, { replace => 1 }), 1);
 
-   #set it
-   is (setfattr($filename, "$key", $val), 1);
+#read it back
+is (getfattr($filename, "$key"), $val);
 
-   #read it back
-   is (getfattr($filename, "$key"), $val);
+#delete it
+ok (delfattr($filename, "$key"));
 
-   #delete it
-   ok (delfattr($filename, "$key"));
-
-   #check that it's gone
-   is (getfattr($filename, "$key"), undef);
-#}
-#print STDERR "done\n";
-#<STDIN>;
+#check that it's gone
+is (getfattr($filename, "$key"), undef);
 
 ##########################
 # IO::Handle-based tests #
@@ -57,25 +52,19 @@ $fh = new IO::File("<$filename") || die "Unable to open $filename";
 
 print "# using file descriptor ".$fh->fileno()."\n";
 
-#for (1..30000) { #checking memory leaks
+#create it
+is (setfattr($fh, "$key", $val, { create => 1 }), 1);
 
-   #will die if xattr stuff doesn't work at all
-   setfattr($fh, "$key", $val)
-    || die "setfattr failed on file descriptor ".$fh->fileno().": $!"; 
+#replace it
+is (setfattr($fh, "$key", $val, { replace => 1 }), 1);
 
-   #set it
-   is (setfattr($fh, "$key", $val), 1);
+#read it back
+is (getfattr($fh, "$key"), $val);
 
-   #read it back
-   is (getfattr($fh, "$key"), $val);
+#delete it
+ok (delfattr($fh, "$key"));
 
-   #delete it
-   ok (delfattr($fh, "$key"));
-
-   #check that it's gone
-   is (getfattr($fh, "$key"), undef);
-#}
-#print STDERR "done\n";
-#<STDIN>;
+#check that it's gone
+is (getfattr($fh, "$key"), undef);
 
 END {unlink $filename if $filename};

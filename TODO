@@ -7,11 +7,10 @@ change to use section 2 calls instead of section 3
 for "operation not supported" note must be prefixed with "user"
 buffer size, reuse buffer?
 throw exceptions rather than warnings on getxattr() failure
-symbolic link handling
+symbolic link handling (O_NOFOLLOW on Mac OS X)
 Check it can be used with Perl 5.6.x
 Factor out common code from the tests
 Refactor the buffer allocation into a common function in ExtAttr.xs
-Write tests for testing creation/replacement of attributes (and failure cases)
 
 Remove dependency on libattr on Linux - just define ENOATTR -> ENODATA?
 (Feels a bit evil to do that.)
@@ -23,12 +22,12 @@ Get it to build on NetBSD 3.0 - it doesn't have strerror_r, which we need.
 NetBSD 4.0 is the first NetBSD to support extattrs on disk, so maybe
 there's no point supporting 3.0?
 
-File::ExtAttr::XATTR_REPLACE/XATTR_CREATE is non-portable; find some
-non-racy of doing this on *BSD & Solaris.
+Document pre-reqs for test suite: Test::Distribution, Test::Pod::Coverage
+Include these in a .spec file that we can include with distro
 
-"user." prefix vs. other platforms. This needs sorting out, perhaps
-as an optional parameter on each *xattr function? Defaults to "user."
-on Linux, nothing on the other platforms.
+Disallow nuls in the attribute names. The list handling will break
+if we allow this. (Alternative is to make the portable listxattr follow
+the BSD API, where the separator is a length byte.)
 
 Rename the module?
 ~~~~~~~~~~~~~~~~~~

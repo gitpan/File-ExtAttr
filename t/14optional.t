@@ -1,4 +1,4 @@
-#!perl -T
+#!perl -T -w
 
 # Before `make install' is performed this script should be runnable with
 # `make test'. After `make install' it should work as `perl Linux-xattr.t'
@@ -27,19 +27,19 @@ my $val = "ZZZadlf03948alsdjfaslfjaoweir12l34kealfkjalskdfas90d8fajdlfkj./.,f";
 #for (1..30000) { #checking memory leaks
 
    #will die if xattr stuff doesn't work at all
-   setfattr($filename, "user.$key", $val) || die "setfattr failed on $filename: $!"; 
+   setfattr($filename, "$key", $val) || die "setfattr failed on $filename: $!"; 
 
    #set it
-   is (setfattr($filename, "user.$key", $val), 1);
+   is (setfattr($filename, "$key", $val), 1);
 
    #read it back
-   is (getfattr($filename, "user.$key"), $val);
+   is (getfattr($filename, "$key"), $val);
 
    #delete it
-   ok (delfattr($filename, "user.$key"));
+   ok (delfattr($filename, "$key"));
 
    #check that it's gone
-   is (getfattr($filename, "user.$key"), undef);
+   is (getfattr($filename, "$key"), undef);
 #}
 #print STDERR "done\n";
 #<STDIN>;
