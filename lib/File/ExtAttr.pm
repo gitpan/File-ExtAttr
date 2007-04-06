@@ -30,6 +30,23 @@ File::ExtAttr - Perl extension for accessing extended attributes of files
       delfattr($fh, 'colour');
   }
 
+  # List attributes in the default namespace.
+  print "Attributes of bar.txt:\n";
+  foreach (listfattr($fh))
+  {
+    print "\t$_\n";
+  }
+
+  # Examine attributes in a namespace-aware manner.
+  my @namespaces = listfattrns($fh);
+
+  foreach my $ns (@namespaces)
+  {
+    print "Attributes in namespace '$ns': ";
+    my @attrs = listfattr($fh, { namespace => $ns });
+    print join(',', @attrs)."\n";
+  }
+
 =head1 DESCRIPTION
 
 File::ExtAttr is a Perl module providing access to the extended attributes
@@ -137,7 +154,7 @@ our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 our @EXPORT = qw(
 );
 
-our $VERSION = '1.01';
+our $VERSION = '1.02';
 
 #this is used by getxattr(), needs documentation
 $File::ExtAttr::MAX_INITIAL_VALUELEN = 255;
@@ -176,7 +193,7 @@ sub _is_fh
 
 Return the value of the attribute named C<$attrname>
 for the file named C<$filename> or referenced by the open filehandle
-C<$filehandle> (which should be an IO::Handle).
+C<$filehandle> (which should be an IO::Handle or subclass thereof).
 
 If no attribute is found, returns C<undef>. Otherwise gives a warning.
 
@@ -197,10 +214,10 @@ sub getfattr
 
 Set the attribute named C<$attrname> with the value C<$attrval>
 for the file named C<$filename> or referenced by the open filehandle
-C<$filehandle> (which should be an IO::Handle).
+C<$filehandle> (which should be an IO::Handle or subclass thereof).
 
 C<%flags> allows control of whether the attribute should be created
-or should replace an existing attribute's value. If the key C<create>
+or should replace an existing attribute\'s value. If the key C<create>
 is true, setfattr will fail if the attribute already exists. If the key
 C<replace> is true, setfattr will fail if the attribute
 does not already exist. If neither is specified, then the attribute
@@ -231,7 +248,7 @@ sub setfattr
 
 Delete the attribute named C<$attrname> for the file named C<$filename>
 or referenced by the open filehandle C<$filehandle>
-(which should be an IO::Handle).
+(which should be an IO::Handle or subclass thereof).
 
 Returns true on success, otherwise false and a warning is issued.
 
@@ -250,8 +267,9 @@ sub delfattr
 
 =item listfattr([$filename | $filehandle], [\%flags])
 
-Return the attributes on the file named C<$filename> or referenced by the open
-filehandle C<$filehandle> (which should be an IO::Handle).
+Return an array of the attributes on the file named C<$filename>
+or referenced by the open filehandle C<$filehandle> (which should be
+an IO::Handle or subclass thereof).
 
 Returns undef on failure and $! will be set.
 
@@ -263,16 +281,16 @@ sub listfattr
 
     return _is_fh($file)
         # File handle
-        ? _listfattr(undef, $file->fileno(), @_)
+        ? _listfattr('', $file->fileno(), @_)
         # Filename
         : _listfattr($file, -1, @_);
 }
 
 =item listfattrns([$filename | $filehandle], [\%flags])
 
-Return a list containing the namespaces of attributes on the file named
+Return an array containing the namespaces of attributes on the file named
 C<$filename> or referenced by the open filehandle C<$filehandle>
-(which should be an IO::Handle).
+(which should be an IO::Handle or subclass thereof).
 
 Returns undef on failure and $! will be set.
 
@@ -284,7 +302,7 @@ sub listfattrns
 
     return _is_fh($file)
         # File handle
-        ? _listfattrns(undef, $file->fileno(), @_)
+        ? _listfattrns('', $file->fileno(), @_)
         # Filename
         : _listfattrns($file, -1, @_);
 }
@@ -369,7 +387,7 @@ Richard Dawe, E<lt>rich@phekda.gotadsl.co.ukE<gt>
 
 Copyright (C) 2005 by Kevin M. Goess
 
-Copyright (C) 2005, 2006 by Richard Dawe
+Copyright (C) 2005, 2006, 2007 by Richard Dawe
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.5 or,
