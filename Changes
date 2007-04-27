@@ -1,5 +1,13 @@
 Revision history for Perl extension File::ExtAttr.
 
+1.03 2007-04-27
+
+    - (richdawe) Fix RT #26542: "Tests fail with taint-mode
+                 and ATTR_TEST_DIR set"; also document ATTR_TEST_DIR.
+
+    - (richdawe) Build fix for NetBSD, OpenBSD: Use strerror()
+                 if strerror_r() is not available.
+
 1.02 2007-04-06
 
     - (richdawe) Fix listfattr() so it works on Linux. Thanks to rafl
@@ -24,6 +32,9 @@ Revision history for Perl extension File::ExtAttr.
 
                  One API change remains: using exceptions rather
                  than warnings to report errors.
+
+    - (richdawe) Fix RT #21214: "ISO C90 forbids mixed declarations
+                 and code"
 
     NOTE: This relase has not been built or tested on Mac OS X.
 
