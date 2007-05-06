@@ -58,13 +58,39 @@ But users can add their own key=value pairs.
 
 Extended attributes may not be supported by your operating system.
 This module is aimed at Linux, Unix or Unix-like operating systems
-(e.g.: Mac OS X, FreeBSD, NetBSD, OpenBSD).
+(e.g.: Mac OS X, FreeBSD, NetBSD, Solaris).
 
 Extended attributes may also not be supported by your filesystem
 or require special options to be enabled for a particular filesystem.
 E.g.:
 
   mount -o user_xattr /dev/hda1 /some/path
+
+=head2 Supported OSes
+
+=over 4
+
+=item Linux
+
+=item Mac OS X
+
+=item FreeBSD 5.0 and later
+
+=item NetBSD 3.0 and later (builds)
+
+=item NetBSD 4.0 and later (for UFS filesystem with xattr support)
+
+=item Solaris 10 and later
+
+=back
+
+=head2 Unsupported OSes
+
+=over 4
+
+=item OpenBSD
+
+=back
 
 =head2 Namespaces
 
@@ -86,7 +112,7 @@ are supported by filesystems. In general C<user>, C<security>, C<system>
 and C<trusted> are supported, by others may be supported --
 e.g.: C<os2> on JFS. File::Extattr will be able to access any of these.
 
-=item FreeBSD, NetBSD, OpenBSD
+=item FreeBSD, NetBSD
 
 *BSD have two namespaces: C<user> and C<system>.
 
@@ -154,7 +180,7 @@ our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 our @EXPORT = qw(
 );
 
-our $VERSION = '1.03';
+our $VERSION = '1.04';
 
 #this is used by getxattr(), needs documentation
 $File::ExtAttr::MAX_INITIAL_VALUELEN = 255;
@@ -346,9 +372,16 @@ L<http://www.die.net/doc/linux/man/man5/attr.5.html>
 
 =item OpenBSD
 
-OpenBSD > 3.8 supports extended attributes.
+OpenBSD 3.7 supported extended attributes, although support was never
+built into the default GENERIC kernel. Its support was documented
+in the C<extattr> man page:
 
 L<http://www.openbsd.org/cgi-bin/man.cgi?query=extattr_get_file&apropos=0&sektion=0&manpath=OpenBSD+Current&arch=i386&format=html>
+
+Support was removed in OpenBSD 3.8 -- see the CVS history
+for the include file C<sys/extattr.h>.
+
+L<http://www.openbsd.org/cgi-bin/cvsweb/src/sys/sys/Attic/extattr.h>
 
 =item FreeBSD
 
@@ -359,9 +392,11 @@ L<http://www.freebsd.org/cgi/man.cgi?query=extattr&sektion=2&apropos=0&manpath=F
 =item NetBSD
 
 NetBSD >= 3.0 supports extended attributes, but you'll need to use
-NetBSD >= 4.0 to have a filesystem that supports them.
+NetBSD >= 4.0 to get UFS filesystem support for them.
 
 L<http://netbsd.gw.com/cgi-bin/man-cgi?extattr_get_file+2+NetBSD-current>
+
+L<http://www.netbsd.org/Changes/changes-4.0.html#ufs>
 
 =item Mac OS X
 
