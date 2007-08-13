@@ -1,14 +1,14 @@
 #!perl -w
 
-# Before `make install' is performed this script should be runnable with
-# `make test'. After `make install' it should work as `perl Linux-xattr.t'
-
-##########################
-
-# change 'tests => 2' to 'tests => last_test_to_print';
-
 use strict;
 use Test::More;
+
+# DEBUG: When debugging with valgrind or top, uncomment this stub for is().
+# Otherwise the test results will be stored by Test::More, "distorting"
+# the picture of memory usage -- it will include the memory usage
+# of both File::ExtAttr and Test::More.
+#
+# sub is {}
 
 BEGIN {
   my $tlib = $0;
@@ -20,12 +20,12 @@ use t::Support;
 if (t::Support::should_skip()) {
   plan skip_all => 'Tests unsupported on this OS/filesystem';
 } else {
-  plan tests => 6;
+  plan tests => 6000;
 }
 
 use File::Temp qw(tempfile);
 use File::Path;
-use File::ExtAttr qw(setfattr getfattr delfattr);
+use File::ExtAttr qw(setfattr getfattr);
 use IO::File;
 
 my $TESTDIR = ($ENV{ATTR_TEST_DIR} || '.');
@@ -37,13 +37,14 @@ close $fh || die "can't close $filename $!";
 my $dirname = "$filename.dir";
 eval { mkpath($dirname); };
 if ($@) {
-    warn "Couldn't create $dirname: $@";
+    die "Couldn't create $dirname: $@";
 }
 
 #todo: try wierd characters in here?
 #     try unicode?
 my $key = "alskdfjadf2340zsdflksjdfa09eralsdkfjaldkjsldkfj";
 my $val = "ZZZadlf03948alsdjfaslfjaoweir12l34kealfkjalskdfas90d8fajdlfkj./.,f";
+my $key2 = $key.'2';
 
 ##########################
 #  Filename-based tests  #
@@ -52,13 +53,18 @@ my $val = "ZZZadlf03948alsdjfaslfjaoweir12l34kealfkjalskdfas90d8fajdlfkj./.,f";
 foreach ( $filename, $dirname ) {
     print "# using $_\n";
 
-    #create and replace it -- should fail
-    undef $@;
-    eval { setfattr($_, "$key", $val, { create => 1, replace => 1 }); };
-    isnt ($@, undef);
+    setfattr($_, $key, $val) || die "setfattr failed on filename $_: $!";
 
-    #check that it's not been created
-    is (getfattr($_, "$key"), undef);
+    for (my $i = 0; $i < 1000; $i++) {
+        # Check for the existing attribute.
+        is(getfattr($_, $key), $val);
+
+        # Check for the non-existing attribute.
+        is(getfattr($_, $key2), undef);
+    }
+
+    # DEBUG: Uncomment when debugging.
+    #sleep(5);
 }
 
 ##########################
@@ -69,15 +75,19 @@ $fh = new IO::File("<$filename") || die "Unable to open $filename";
 
 print "# using file descriptor ".$fh->fileno()."\n";
 
-my $key2 = $key.'2';
+setfattr($fh, $key, $val)
+    || die "setfattr failed on file descriptor ".$fh->fileno().": $!"; 
 
-#create and replace it -- should fail
-undef $@;
-eval { setfattr($fh, $key2, $val, { create => 1, replace => 1 }); };
-isnt ($@, undef);
+for (my $i = 0; $i < 1000; $i++) {
+    # Check for the existing attribute.
+    is(getfattr($fh, $key), $val);
 
-#check that it's not been created
-is (getfattr($fh, $key2), undef);
+    # Check for the non-existing attribute.
+    is(getfattr($fh, $key2), undef);
+}
+
+# DEBUG: Uncomment when debugging.
+#sleep(5);
 
 END {
     unlink $filename if $filename;
