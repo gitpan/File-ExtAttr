@@ -1,5 +1,13 @@
 Revision history for Perl extension File::ExtAttr.
 
+1.07 2007-12-15
+
+    - (richdawe) Bugfix: When the attribute value was empty, getfattr()
+                 returned garbage. Fixed. (Reported by Joe Stewart --
+                 thanks!)
+
+    - (richdawe) Change my contact details.
+
 1.06 2007-11-04
 
     - (richdawe) Bugfix: Builds and works again on Mac OS X 10.4 (Tiger).
