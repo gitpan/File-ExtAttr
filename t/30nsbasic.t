@@ -31,7 +31,7 @@ use IO::File;
 my $TESTDIR = ($ENV{ATTR_TEST_DIR} || '.');
 my ($fh, $filename) = tempfile( DIR => $TESTDIR );
 
-close $fh || die "can't close $filename $!";
+close $fh or die "can't close $filename $!";
 
 # Create a directory.
 my $dirname = "$filename.dir";
@@ -58,7 +58,7 @@ foreach ( $filename, $dirname ) {
 
    #will die if xattr stuff doesn't work at all
    setfattr($_, "$key", $val, { namespace => 'user' })
-     || die "setfattr failed on filename $_: $!"; 
+     or die "setfattr failed on filename $_: $!"; 
 
    #set it
    is (setfattr($_, "$key", $val, { namespace => 'user' }), 1);
@@ -78,8 +78,13 @@ foreach ( $filename, $dirname ) {
    is (getfattr($_, "$key", { namespace => 'user' }), undef);
 
    #check user namespace doesn't exist now
-   @ns = listfattrns($_);
-   is (grep(/^user$/, @ns), 0);
+   SKIP: {
+     skip "Unremoveable user attributes prevent testing namespace removal",
+       1 if t::Support::has_system_attrs($_);
+
+     @ns = listfattrns($_);
+     is (grep(/^user$/, @ns), 0);
+   }
 #}
 }
 
@@ -87,7 +92,7 @@ foreach ( $filename, $dirname ) {
 # IO::Handle-based tests #
 ##########################
 
-$fh = new IO::File("<$filename") || die "Unable to open $filename";
+$fh = new IO::File("<$filename") or die "Unable to open $filename";
 
 print "# using file descriptor ".$fh->fileno()."\n";
 
@@ -95,7 +100,7 @@ print "# using file descriptor ".$fh->fileno()."\n";
 
    #will die if xattr stuff doesn't work at all
    setfattr($fh, "$key", $val, { namespace => 'user' })
-     || die "setfattr failed on file descriptor ".$fh->fileno().": $!"; 
+     or die "setfattr failed on file descriptor ".$fh->fileno().": $!"; 
 
    #set it
    is (setfattr($fh, "$key", $val, { namespace => 'user' }), 1);
@@ -115,8 +120,13 @@ print "# using file descriptor ".$fh->fileno()."\n";
    is (getfattr($fh, "$key", { namespace => 'user' }), undef);
 
    #check user namespace doesn't exist now
-   @ns = listfattrns($fh);
-   is (grep(/^user$/, @ns), 0);
+   SKIP: {
+     skip "Unremoveable user attributes prevent testing namespace removal",
+       1 if t::Support::has_system_attrs($fh);
+
+     @ns = listfattrns($fh);
+     is (grep(/^user$/, @ns), 0);
+   }
 #}
 #print STDERR "done\n";
 #<STDIN>;

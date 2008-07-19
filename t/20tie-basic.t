@@ -24,7 +24,7 @@ use File::ExtAttr qw(getfattr);
 my $TESTDIR = ($ENV{ATTR_TEST_DIR} || '.');
 my ($fh, $filename) = tempfile( DIR => $TESTDIR );
 
-close $fh || die "can't close $filename $!";
+close $fh or die "can't close $filename $!";
 
 # Create a directory.
 my $dirname = "$filename.dir";
@@ -43,6 +43,7 @@ foreach ( $filename, $dirname ) {
 
     # Check there are no user extattrs.
     @ks = keys(%extattr);
+    @ks = t::Support::filter_system_attrs(@ks);
     ok(scalar(@ks) == 0);
 
     # Test multiple attributes.
@@ -82,6 +83,7 @@ foreach ( $filename, $dirname ) {
 
     # Check there are only our extattrs.
     @ks = keys(%extattr);
+    @ks = t::Support::filter_system_attrs(@ks);
     ok(scalar(@ks) == scalar(keys(%test_attrs)));
     print '# '.join(' ', @ks)."\n";
 }

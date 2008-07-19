@@ -76,9 +76,7 @@ E.g.:
 
 =item FreeBSD 5.0 and later
 
-=item NetBSD 3.0 and later (builds)
-
-=item NetBSD 4.0 and later (for UFS filesystem with xattr support)
+=item NetBSD 4.0 and later
 
 =item Solaris 10 and later
 
@@ -180,7 +178,7 @@ our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 our @EXPORT = qw(
 );
 
-our $VERSION = '1.07';
+our $VERSION = '1.08';
 
 #this is used by getxattr(), needs documentation
 $File::ExtAttr::MAX_INITIAL_VALUELEN = 255;
@@ -243,7 +241,7 @@ for the file named C<$filename> or referenced by the open filehandle
 C<$filehandle> (which should be an IO::Handle or subclass thereof).
 
 C<%flags> allows control of whether the attribute should be created
-or should replace an existing attribute\'s value. If the key C<create>
+or should replace an existing attribute's value. If the key C<create>
 is true, setfattr will fail if the attribute already exists. If the key
 C<replace> is true, setfattr will fail if the attribute
 does not already exist. If neither is specified, then the attribute
@@ -366,6 +364,8 @@ Various low-level APIs exist for manipulating extended attributes:
 
 =item Linux
 
+getattr(2), attr(5)
+
 L<http://www.die.net/doc/linux/man/man2/getxattr.2.html>
 
 L<http://www.die.net/doc/linux/man/man5/attr.5.html>
@@ -387,6 +387,8 @@ L<http://www.openbsd.org/cgi-bin/cvsweb/src/sys/sys/Attic/extattr.h>
 
 FreeBSD >= 5.0 supports extended attributes.
 
+extattr(2)
+
 L<http://www.freebsd.org/cgi/man.cgi?query=extattr&sektion=2&apropos=0&manpath=FreeBSD+6.0-RELEASE+and+Ports>
 
 =item NetBSD
@@ -400,15 +402,27 @@ L<http://www.netbsd.org/Changes/changes-4.0.html#ufs>
 
 =item Mac OS X
 
+getxattr(2)
+
 L<http://developer.apple.com/documentation/Darwin/Reference/ManPages/man2/getxattr.2.html>
 
 L<http://arstechnica.com/reviews/os/macosx-10.4.ars/7>
 
 =item Solaris
 
+attropen(3C), fsattr(5)
+
 L<http://docsun.cites.uiuc.edu/sun_docs/C/solaris_9/SUNWaman/hman3c/attropen.3c.html>
 
 L<http://docsun.cites.uiuc.edu/sun_docs/C/solaris_9/SUNWaman/hman5/fsattr.5.html>
+
+Solaris also has extensible system attributes, which are used
+by Solaris's CIFS support on ZFS, and have a confusingly similar
+name to extended file attributes. These system attributes are stored
+in extended file attributes called SUNWattr_ro and SUNWattr_rw.
+See PSARC 2007/315 for more details:
+
+L<http://opensolaris.org/os/community/arc/caselog/2007/315/spec-final-txt/>
 
 =back
 
@@ -422,7 +436,7 @@ Richard Dawe, E<lt>richdawe@cpan.orgE<gt>
 
 Copyright (C) 2005 by Kevin M. Goess
 
-Copyright (C) 2005, 2006, 2007 by Richard Dawe
+Copyright (C) 2005, 2006, 2007, 2008 by Richard Dawe
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.5 or,

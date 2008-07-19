@@ -1,4 +1,5 @@
 Changes
+inc/Devel/CheckLib.pm
 Makefile.PL
 MANIFEST
 MANIFEST.SKIP
@@ -6,11 +7,10 @@ ppport.h
 README
 TODO
 ExtAttr.xs
+typemap
 portable.h
 flags.c
 flags.h
-helpers.h
-helpers.c
 extattr_bsd.h
 extattr_bsd.c
 extattr_linux.h
@@ -42,6 +42,7 @@ t/32nsnonuser.t
 t/33nslong.t
 t/39nsempty.t
 t/80memleakget.t
+t/81closed.t
 lib/File/ExtAttr.pm
 lib/File/ExtAttr/Tie.pm
 META.yml                                 Module meta-data (added by MakeMaker)

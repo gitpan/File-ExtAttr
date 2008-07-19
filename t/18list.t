@@ -13,7 +13,7 @@ use t::Support;
 if (t::Support::should_skip()) {
   plan skip_all => 'Tests unsupported on this OS/filesystem';
 } else {
-  plan tests => 183;
+  plan tests => 213;
 }
 
 use File::Temp qw(tempfile);
@@ -24,7 +24,7 @@ use IO::File;
 my $TESTDIR = ($ENV{ATTR_TEST_DIR} || '.');
 my ($fh, $filename) = tempfile( DIR => $TESTDIR );
 
-close $fh || die "can't close $filename $!";
+close $fh or die "can't close $filename $!";
 
 # Create a directory.
 my $dirname = "$filename.dir";
@@ -52,7 +52,10 @@ foreach ( $filename, $dirname ) {
         is (setfattr($_, $k, $vals{$k}, { create => 1 }), 1);
 
         # create it again -- should fail
-        is (setfattr($_, $k, $vals{$k}, { create => 1 }), 0);
+        my $ret = setfattr($_, $k, $vals{$k}, { create => 1 });
+        my $err = int $!;
+        is ($ret, 0);
+        is ($err, $!{EEXIST});
 
         # read it back
         is (getfattr($_, $k), $vals{$k});
@@ -60,7 +63,7 @@ foreach ( $filename, $dirname ) {
     
     # Check that the list contains all the attributes.
     my @attrs = listfattr($_);
-    @attrs = sort @attrs;
+    @attrs = sort(t::Support::filter_system_attrs(@attrs));
     my @ks = sort keys %vals;
 
     check_attrs(\@attrs, \@ks);
@@ -80,7 +83,7 @@ foreach ( $filename, $dirname ) {
 # IO::Handle-based tests #
 ##########################
 
-$fh = new IO::File("<$filename") || die "Unable to open $filename";
+$fh = new IO::File("<$filename") or die "Unable to open $filename";
 
 print "# using file descriptor ".$fh->fileno()."\n";
 
@@ -90,7 +93,10 @@ foreach (keys %vals)
     is (setfattr($fh, $_, $vals{$_}, { create => 1 }), 1);
 
     # create it again -- should fail
-    is (setfattr($fh, $_, $vals{$_}, { create => 1 }), 0);
+    my $ret = setfattr($fh, $_, $vals{$_}, { create => 1 });
+    my $err = int $!;
+    is ($ret, 0);
+    is ($err, $!{EEXIST});
 
     # read it back
     is (getfattr($fh, $_), $vals{$_});
@@ -98,7 +104,7 @@ foreach (keys %vals)
 
 # Check that the list contains all the attributes.
 my @attrs = listfattr($fh);
-@attrs = sort @attrs;
+@attrs = sort(t::Support::filter_system_attrs(@attrs));
 my @ks = sort keys %vals;
 
 check_attrs(\@attrs, \@ks);
