@@ -1,5 +1,29 @@
 Revision history for Perl extension File::ExtAttr.
 
+1.09 2009-03-07
+
+    - (richdawe) Add note to README about needing to install
+                 package that provides the headers <attr/attributes.h>
+                 and <attr/xattr.h>.
+
+    - (richdawe) Fix RT #31970: "OS X: setfattr fails to set empty value".
+                 According to the CPAN Testers results, this works
+                 on Mac OS X 10.5.
+
+                 Skip the "empty" tests on Mac OS X 10.4 and earlier.
+                 Document issue.
+
+    - (richdawe) Fix #34394: "Test suite should skip on filesystems
+                 with no xattr support when run non-interactively"
+                 on Linux.
+
+                 When run interactively, it will suggest what you need
+                 to do, to get the test suite to pass.
+
+    - (richdawe) Fix RT #37889: "Crash when operating on a closed file handle
+                 on Solaris". This was due to using an uninitialised
+                 directory handle.
+
 1.08 2008-08-19
 
     - (richdawe) Add a typemap for usage of "const char *" in the XS.

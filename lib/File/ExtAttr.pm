@@ -178,7 +178,7 @@ our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 our @EXPORT = qw(
 );
 
-our $VERSION = '1.08';
+our $VERSION = '1.09';
 
 #this is used by getxattr(), needs documentation
 $File::ExtAttr::MAX_INITIAL_VALUELEN = 255;
@@ -347,6 +347,11 @@ and C<listfattr> be exported using the tag ":all".
 =head2 Exportable constants
 
 None
+
+=head1 BUGS
+
+You cannot set empty attributes on Mac OS X 10.4 and earlier.
+This is a bug in Darwin, rather than File::ExtAttr.
 
 =head1 SEE ALSO
 
